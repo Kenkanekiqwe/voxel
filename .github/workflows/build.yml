@@ -11,3 +11,12 @@ jobs:
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
       - name: Build
         run: cmake --build build --config Release --parallel
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: Voxel-Windows-x64
+          path: |
+            build/Release/VoxelClient.exe
+            build/Release/VoxelServer.exe
+          if-no-files-found: error

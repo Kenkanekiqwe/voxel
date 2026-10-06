@@ -10,7 +10,7 @@ public:
  VoiceAudio(); ~VoiceAudio();
  bool start(SOCKET socket,sockaddr_in server,uint16_t room,const std::string& name);
  void stop(); void set_muted(bool v){muted_=v;} bool muted()const{return muted_;}
- void push_encoded(const unsigned char* data,int size);
+ void push_encoded(const unsigned char* data,int size);\n uint16_t room() const{return room_;}
 private:
  static void capture_cb(void*,void* input,const void*,unsigned int frames);
  static void playback_cb(void*,void*,void* output,unsigned int frames);

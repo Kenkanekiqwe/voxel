@@ -30,7 +30,7 @@ bool ScreenCapture::capture_jpeg(std::vector<uint8_t>& jpeg,int max_width,int ma
 
  HRESULT init=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
  bool uninit=SUCCEEDED(init);
- IWICImagingFactory* factory=nullptr; IWICBitmap* source=nullptr; IWICBitmap* scaled=nullptr;
+ IWICImagingFactory* factory=nullptr; IWICBitmap* source=nullptr; IWICBitmapScaler* scaled=nullptr;
  IWICBitmapEncoder* encoder=nullptr; IWICBitmapFrameEncode* frame=nullptr;
  HRESULT hr=CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory));
  if(SUCCEEDED(hr)) hr=factory->CreateBitmapFromMemory(sw,sh,GUID_WICPixelFormat32bppBGRA,sw*4,(UINT)pixels.size(),pixels.data(),&source);

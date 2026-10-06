@@ -85,7 +85,7 @@ static void receiver(){
    if(h->type==voxel::AUDIO&&h->size>=voxel::NAME_BYTES){
      int payload=h->size-(int)voxel::NAME_BYTES;
      if(payload>0&&payload<=1275&&n>=(int)sizeof(voxel::Header)+voxel::NAME_BYTES+payload)
-       std::string speaker((char*)buf+sizeof(voxel::Header),strnlen((char*)buf+sizeof(voxel::Header),voxel::NAME_BYTES));\n       if(!speaker.empty())g_audio.push_encoded((unsigned char*)buf+sizeof(voxel::Header)+voxel::NAME_BYTES,payload,speaker);
+       std::string speaker((char*)buf+sizeof(voxel::Header), strnlen((char*)buf+sizeof(voxel::Header), voxel::NAME_BYTES));\n       if(!speaker.empty())g_audio.push_encoded((unsigned char*)buf+sizeof(voxel::Header)+voxel::NAME_BYTES,payload,speaker);
    }else if(h->type==voxel::SCREEN)handle_screen_packet(buf,n);
  }
 }

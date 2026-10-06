@@ -23,7 +23,7 @@ static VoiceAudio g_audio;
 static std::atomic<bool> g_running=false;
 static std::atomic<bool> g_sharing=false;
 static std::thread g_rx,g_screen_thread;
-static HWND g_status,g_host,g_name,g_room,g_connect,g_mute,g_screen,g_preview;
+static HWND g_status,g_host,g_name,g_room,g_connect,g_mute,g_screen,g_source,g_preview; static std::vector<CaptureSource> g_sources;
 static std::mutex g_frame_mutex;
 static std::vector<unsigned char> g_remote_jpeg;
 static uint32_t g_rx_frame_id=0;
@@ -67,7 +67,7 @@ static void handle_screen_packet(const char* buf,int n){
    g_rx_frame_id=f->frame_id;g_rx_frame_count=f->count;g_rx_frame_received=0;g_rx_last_payload=0;g_rx_frame_buffer.assign((size_t)f->count*1000,0);
  }
  size_t offset=(size_t)f->index*1000;
- memcpy(g_rx_frame_buffer.data()+offset,buf+sizeof(voxel::Header)+sizeof(voxel::ScreenFragment),payload);
+ memcpy(g_rx_frame_buffer.data()+offset,buf+sizeof(voxel::Header)+sizeof(voxel::ScreenFragment),payload); if(f->index==f->count-1)g_rx_last_payload=(uint16_t)payload;
  ++g_rx_frame_received;
  if(g_rx_frame_received>=g_rx_frame_count){
    size_t total=(size_t)(f->count-1)*1000+g_rx_last_payload;
@@ -93,10 +93,10 @@ static void receiver(){
 }
 
 static void screen_sender(){
- ScreenCapture capture;
+ ScreenCapture capture; CaptureSource source; if(g_source){ int idx=(int)SendMessageW(g_source,CB_GETCURSEL,0,0); if(idx>=0&&idx<(int)g_sources.size())source=g_sources[idx]; }
  while(g_running&&g_sharing){
    std::vector<unsigned char> jpeg;
-   if(capture.capture_jpeg(jpeg,960,540,55)&&!jpeg.empty()){
+   if(capture.capture_jpeg(jpeg,source,960,540,55)&&!jpeg.empty()){
      constexpr size_t chunk=1000;uint16_t count=(uint16_t)((jpeg.size()+chunk-1)/chunk);
      if(count<=600){
        uint32_t id=++g_tx_frame_id;
@@ -168,9 +168,14 @@ int WINAPI wWinMain(HINSTANCE h,HINSTANCE,PWSTR,int){
  CreateWindowW(L"STATIC",L"Name",WS_CHILD|WS_VISIBLE,278,22,50,24,win,nullptr,h,nullptr);g_name=CreateWindowW(L"EDIT",L"Player",WS_CHILD|WS_VISIBLE|WS_BORDER,328,18,150,28,win,nullptr,h,nullptr);
  CreateWindowW(L"STATIC",L"Room",WS_CHILD|WS_VISIBLE,494,22,45,24,win,nullptr,h,nullptr);g_room=CreateWindowW(L"EDIT",L"1",WS_CHILD|WS_VISIBLE|WS_BORDER,539,18,60,28,win,nullptr,h,nullptr);
  g_connect=CreateWindowW(L"BUTTON",L"Connect",WS_CHILD|WS_VISIBLE,620,17,110,32,win,(HMENU)1001,h,nullptr);
- g_mute=CreateWindowW(L"BUTTON",L"Mute",WS_CHILD|WS_VISIBLE,24,62,110,34,win,nullptr,h,nullptr);
- g_screen=CreateWindowW(L"BUTTON",L"Share Screen",WS_CHILD|WS_VISIBLE,146,62,140,34,win,(HMENU)1004,h,nullptr);
- g_status=CreateWindowW(L"STATIC",L"Not connected",WS_CHILD|WS_VISIBLE,310,68,420,28,win,nullptr,h,nullptr);
+ g_mute=CreateWindowW(L"BUTTON",L"Mute",WS_CHILD|WS_VISIBLE,24,62,105,34,win,nullptr,h,nullptr);
+ g_screen=CreateWindowW(L"BUTTON",L"Share",WS_CHILD|WS_VISIBLE,137,62,105,34,win,(HMENU)1004,h,nullptr);
+ CreateWindowW(L"STATIC",L"Source",WS_CHILD|WS_VISIBLE,255,68,50,24,win,nullptr,h,nullptr);
+ g_source=CreateWindowW(L"COMBOBOX",L"",WS_CHILD|WS_VISIBLE|WS_BORDER|CBS_DROPDOWNLIST,305,62,300,180,win,nullptr,h,nullptr);
+ g_status=CreateWindowW(L"STATIC",L"Not connected",WS_CHILD|WS_VISIBLE,620,68,300,24,win,nullptr,h,nullptr);
  g_preview=CreateWindowExW(WS_EX_CLIENTEDGE,L"VoxelPreview",L"",WS_CHILD|WS_VISIBLE,24,115,900,480,win,nullptr,h,nullptr);
+ g_sources=ScreenCapture::enumerate_sources();
+ for(const auto& s:g_sources) SendMessageW(g_source,CB_ADDSTRING,0,(LPARAM)s.title.c_str());
+ if(!g_sources.empty()) SendMessageW(g_source,CB_SETCURSEL,0,0);
  MSG msg;while(GetMessageW(&msg,nullptr,0,0)){TranslateMessage(&msg);DispatchMessageW(&msg);}return 0;
 }

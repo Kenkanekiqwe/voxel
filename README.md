@@ -20,3 +20,6 @@ The first configure downloads Opus and miniaudio.
 Start VoxelServer.exe and expose UDP port 40000. Then run VoxelClient.exe and enter the server IP.
 
 Next layer: stream captured screen frames to a room and add a proper SFU/jitter buffer while keeping this native client architecture.
+
+
+Native screen sharing now uses fragmented JPEG frames over the native UDP transport; remote clients render the received stream in the desktop preview.

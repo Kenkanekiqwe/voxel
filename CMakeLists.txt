@@ -28,7 +28,7 @@ if(NOT EXISTS "${MINIAUDIO_HEADER}")
 endif()
 
 add_executable(VoxelClient WIN32 client/main.cpp client/audio.cpp client/screen_capture.cpp)
-target_include_directories(VoxelClient PRIVATE "${MINIAUDIO_DIR}" client common)
+target_include_directories(VoxelClient PRIVATE "${MINIAUDIO_DIR}" "${opus_SOURCE_DIR}/include" client common)
 target_link_libraries(VoxelClient PRIVATE opus ws2_32 ole32 user32 gdi32 windowscodecs)
 target_compile_definitions(VoxelClient PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 

@@ -2,7 +2,7 @@
 #include "miniaudio.h"
 #include "audio.hpp"
 #include "../common/protocol.hpp"
-#include <opus/opus.h>
+#include <opus.h>
 #include <algorithm>
 #include <cstring>
 VoiceAudio::VoiceAudio(){}

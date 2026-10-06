@@ -27,7 +27,7 @@ static HWND g_status,g_host,g_name,g_room,g_connect,g_mute,g_screen,g_preview;
 static std::mutex g_frame_mutex;
 static std::vector<unsigned char> g_remote_jpeg;
 static uint32_t g_rx_frame_id=0;
-static uint16_t g_rx_frame_count=0,g_rx_frame_received=0;
+static uint16_t g_rx_frame_count=0,g_rx_frame_received=0,g_rx_last_payload=0;
 static std::vector<unsigned char> g_rx_frame_buffer;
 static std::atomic<uint32_t> g_tx_frame_id=0;
 
@@ -64,13 +64,13 @@ static void handle_screen_packet(const char* buf,int n){
  if(f->count==0||f->index>=f->count||payload!=(int)f->payload_size||payload>1000)return;
  std::lock_guard lock(g_frame_mutex);
  if(f->frame_id!=g_rx_frame_id||f->count!=g_rx_frame_count){
-   g_rx_frame_id=f->frame_id;g_rx_frame_count=f->count;g_rx_frame_received=0;g_rx_frame_buffer.assign((size_t)f->count*1000,0);
+   g_rx_frame_id=f->frame_id;g_rx_frame_count=f->count;g_rx_frame_received=0;g_rx_last_payload=0;g_rx_frame_buffer.assign((size_t)f->count*1000,0);
  }
  size_t offset=(size_t)f->index*1000;
  memcpy(g_rx_frame_buffer.data()+offset,buf+sizeof(voxel::Header)+sizeof(voxel::ScreenFragment),payload);
  ++g_rx_frame_received;
  if(g_rx_frame_received>=g_rx_frame_count){
-   size_t total=(size_t)(f->count-1)*1000+f->payload_size;
+   size_t total=(size_t)(f->count-1)*1000+g_rx_last_payload;
    g_remote_jpeg.assign(g_rx_frame_buffer.begin(),g_rx_frame_buffer.begin()+total);g_rx_frame_received=0;
    if(g_preview)InvalidateRect(g_preview,nullptr,FALSE);
  }
@@ -85,7 +85,7 @@ static void receiver(){
    if(h->type==voxel::AUDIO&&h->size>=voxel::NAME_BYTES){
      int payload=h->size-(int)voxel::NAME_BYTES;
      if(payload>0&&payload<=1275&&n>=(int)sizeof(voxel::Header)+voxel::NAME_BYTES+payload)
-       g_audio.push_encoded((unsigned char*)buf+sizeof(voxel::Header)+voxel::NAME_BYTES,payload);
+       std::string speaker((char*)buf+sizeof(voxel::Header),strnlen((char*)buf+sizeof(voxel::Header),voxel::NAME_BYTES));\n       if(!speaker.empty())g_audio.push_encoded((unsigned char*)buf+sizeof(voxel::Header)+voxel::NAME_BYTES,payload,speaker);
    }else if(h->type==voxel::SCREEN)handle_screen_packet(buf,n);
  }
 }

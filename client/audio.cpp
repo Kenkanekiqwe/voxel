@@ -46,7 +46,8 @@ void VoiceAudio::push_encoded(const unsigned char* data,int size,const std::stri
  std::lock_guard lock(queue_mutex_);queue_.insert(queue_.end(),pcm,pcm+n);
  if(queue_.size()>48000)queue_.erase(queue_.begin(),queue_.begin()+(queue_.size()-48000));
 }
-void VoiceAudio::capture_cb(void* user,void* input,const void*,unsigned int frames){
+void VoiceAudio::capture_cb(ma_device* device,void*,const void* input,ma_uint32 frames){
+ auto* user=device->pUserData;
  auto*self=(VoiceAudio*)user;if(!self->running_||self->muted_||!input)return;
  unsigned char enc[1275];int n=opus_encode((OpusEncoder*)self->encoder_,(const int16_t*)input,(int)frames,enc,sizeof(enc));if(n<=0)return;
  unsigned char packet[sizeof(voxel::Header)+voxel::NAME_BYTES+1275];auto*h=(voxel::Header*)packet;
@@ -55,7 +56,8 @@ void VoiceAudio::capture_cb(void* user,void* input,const void*,unsigned int fram
  std::memcpy(packet+sizeof(voxel::Header)+voxel::NAME_BYTES,enc,n);
  sendto(self->socket_,(const char*)packet,(int)(sizeof(voxel::Header)+voxel::NAME_BYTES+n),0,(sockaddr*)&self->server_,sizeof(self->server_));
 }
-void VoiceAudio::playback_cb(void* user,void*,void* output,unsigned int frames){
+void VoiceAudio::playback_cb(ma_device* device,void* output,const void*,ma_uint32 frames){
+ auto* user=device->pUserData;
  auto*self=(VoiceAudio*)user;auto*dst=(int16_t*)output;std::fill(dst,dst+frames,0);
  std::lock_guard lock(self->queue_mutex_);size_t n=std::min<size_t>(frames,self->queue_.size());std::copy_n(self->queue_.begin(),n,dst);self->queue_.erase(self->queue_.begin(),self->queue_.begin()+n);
 }

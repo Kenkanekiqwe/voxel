@@ -1,17 +1,15 @@
 #include "screen_capture.hpp"
 #include <windows.h>
 #include <wincodec.h>
-#include <shlwapi.h>
 #include <vector>
 #include <algorithm>
 #pragma comment(lib,"windowscodecs.lib")
 #pragma comment(lib,"ole32.lib")
-#pragma comment(lib,"shlwapi.lib")
 
 static void release_unknown(IUnknown* p){ if(p) p->Release(); }
 
 bool ScreenCapture::capture_jpeg(std::vector<uint8_t>& jpeg,int max_width,int max_height,int quality){
- jpeg.clear(); error_.clear();
+ jpeg.clear(); error_.clear(); (void)quality;
  HDC screen=GetDC(nullptr);
  if(!screen){error_=L"GetDC failed";return false;}
  int sw=GetSystemMetrics(SM_CXSCREEN), sh=GetSystemMetrics(SM_CYSCREEN);
@@ -33,7 +31,7 @@ bool ScreenCapture::capture_jpeg(std::vector<uint8_t>& jpeg,int max_width,int ma
  HRESULT init=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
  bool uninit=SUCCEEDED(init);
  IWICImagingFactory* factory=nullptr; IWICBitmap* source=nullptr; IWICBitmap* scaled=nullptr;
- IWICStream* stream=nullptr; IWICBitmapEncoder* encoder=nullptr; IWICBitmapFrameEncode* frame=nullptr;
+ IWICBitmapEncoder* encoder=nullptr; IWICBitmapFrameEncode* frame=nullptr;
  HRESULT hr=CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory));
  if(SUCCEEDED(hr)) hr=factory->CreateBitmapFromMemory(sw,sh,GUID_WICPixelFormat32bppBGRA,sw*4,(UINT)pixels.size(),pixels.data(),&source);
  int dw=sw, dh=sh;
@@ -61,7 +59,7 @@ bool ScreenCapture::capture_jpeg(std::vector<uint8_t>& jpeg,int max_width,int ma
    hr=memstream->Read(jpeg.data(),(ULONG)jpeg.size(),&read); if(SUCCEEDED(hr)) jpeg.resize(read);
   }
  }
- if(frame)frame->Release(); if(encoder)encoder->Release(); if(memstream)memstream->Release(); if(stream)stream->Release();
+ if(frame)frame->Release(); if(encoder)encoder->Release(); if(memstream)memstream->Release();
  if(scaled)scaled->Release(); if(source)source->Release(); if(factory)factory->Release(); if(uninit)CoUninitialize();
  if(FAILED(hr)){jpeg.clear();error_=L"WIC JPEG capture failed";return false;} return true;
 }
